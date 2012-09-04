@@ -1,0 +1,94 @@
+#!/usr/bin/perl
+#
+#2012年度プロ入レポートテンプレ生成スクリプト
+#
+#author: ArGxento
+#
+#
+#概要
+#
+#
+##課題で指定されたファイル名のコードを一括でコンパイル・実行し、
+##実行結果を指定された形式のドキュメントのLaTeXを生成する
+#
+#
+#使い方
+##
+##再提出等の場合を考えて、新しいディレクトリを作り、そこにこのファイルと書いたコードを置くのが望ましい
+##
+##このファイルをパーミッションを実行可能に
+##
+##書いたコードのあるディレクトリ内で、./mkrep d mを実行
+#### d: 講義の番号
+#### m: 課題番号の最大値
+#### e.g. その日の最後の課題のファイル名がq4_2.cならば、d: 4, m: 2
+##
+##report.texが出力されるので、課題に合わせて適宜修正
+##
+##report.texをコンパイルし、提出
+#
+#注意
+##あんまりデバッグしてないです
+##
+##みんな同一フォーマットだと色々厄介なので、適宜いじるといいかもしれない
+use strict;
+
+##########設定###############
+(my $userName, my $userNo, my $userMail) =
+("由亜 寧霧", # 名前
+ "201211nnn", # 学籍番号
+ '201211nnn@coins.tsukuba.ac.jp' # メールアドレス
+);
+#############################
+my $datNo = shift(@ARGV);
+my $qNo = shift(@ARGV);
+
+print($datNo, $qNo, "\n");
+
+my $dat = <<"EOD";
+\\documentclass[a4j]{jsarticle}
+
+
+\\title{プログラミング入門I演習報告書}
+\\author{$userName\\\\$userNo\\\\$userMail}
+\\date{\\today}
+
+\\begin{document}
+
+\\maketitle
+
+\%\\newpage
+
+\\tableofcontents
+\%\\newpage
+EOD
+
+    for(my$i = 1; $i <= $qNo; $i++){
+	my$fName = "q".$datNo."_".$i;
+	print("file: ".$fName."\n");
+	my$code;my$res;
+	print("  compile errors: ".`gcc $fName.c -o $fName`."\n");
+
+	do{open(my $fh, '<', $fName.".c") or die $!;
+	   $code = do { local $/ = undef; <$fh>; };};
+	do{open(my $fh, '-|', "./".$fName) or die $!;
+	   $res = do { local $/ = undef; <$fh>; };};
+	
+	$dat = <<"EOD";
+$dat
+\\section{課題$i}
+\\subsection{コード}
+\\begin{verbatim}
+$code
+\\end{verbatim}
+\\subsection{実行結果}
+\\begin{verbatim}
+$res
+\\end{verbatim}
+EOD
+}
+$dat="$dat\n\\end{document}\n";
+
+    open(REPH, ">", "report.tex");
+print(REPH $dat);
+
